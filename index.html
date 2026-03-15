@@ -183,7 +183,7 @@ function TarotCard({card,flipped,onClick,label,delay=0,autoFlip=false}){
   return(
     <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,opacity:appeared?1:0,transform:appeared?"translateY(0)":"translateY(30px)",transition:"opacity 0.6s ease,transform 0.6s ease"}}>
       {label&&<div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:"#d4af37",letterSpacing:2,textTransform:"uppercase",marginBottom:4,textAlign:"center"}}>{label}</div>}
-      <div onClick={!isFlipped&&!autoFlip?onClick:undefined} style={{width:140,height:220,perspective:800,cursor:isFlipped||autoFlip?"default":"pointer"}}>
+      <div onClick={!isFlipped&&!autoFlip?onClick:undefined} style={{width:140,height:245,perspective:800,cursor:isFlipped||autoFlip?"default":"pointer"}}>
         <div style={{width:"100%",height:"100%",position:"relative",transformStyle:"preserve-3d",transition:"transform 0.8s cubic-bezier(0.4,0,0.2,1)",transform:isFlipped?"rotateY(180deg)":"rotateY(0deg)"}}>
           <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",borderRadius:10,overflow:"hidden",boxShadow:isFlipped?"none":"0 0 25px rgba(212,175,55,0.15),0 8px 32px rgba(0,0,0,0.5)"}}><CardBack/></div>
           <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",transform:"rotateY(180deg)",borderRadius:10,overflow:"hidden",background:"#f5f0e1",boxShadow:"0 0 30px rgba(212,175,55,0.2),0 8px 32px rgba(0,0,0,0.5)"}}><CardImage card={card}/></div>
@@ -318,7 +318,7 @@ function App(){
                 </div>
                 <div style={{width:40,height:1,background:"linear-gradient(90deg,transparent,#d4af37,transparent)",margin:"0 auto 20px"}}/>
                 <p style={{fontSize:16,color:"#e8dcc8",lineHeight:1.7,margin:"0 0 20px"}}>
-                  За персональной трактовкой расклада пиши{" "}
+                  За персональной трактовкой и раскладами пиши{" "}
                   <a href="https://t.me/neva_nevajno" target="_blank" rel="noopener noreferrer" style={{color:"#d4af37",textDecoration:"none",borderBottom:"1px solid rgba(212,175,55,0.4)"}}>@neva_nevajno</a>
                 </p>
                 <a href="https://t.me/rasklad_takoj" target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"10px 24px",background:"rgba(212,175,55,0.1)",border:"1px solid rgba(212,175,55,0.3)",borderRadius:30,color:"#d4af37",textDecoration:"none",fontSize:14,letterSpacing:1}}>✦ Канал: Расклад Такой ✦</a>
