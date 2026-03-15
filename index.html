@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Расклад от Даши</title>
+<meta name="description" content="Таро расклад от Даши — карта дня, ответ на вопрос, три карты">
+<meta property="og:title" content="Расклад от Даши">
+<meta property="og:description" content="Таро расклад — карта дня, ответ на вопрос, три карты">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#060818;font-family:'Cormorant Garamond',serif;overflow-x:hidden}
+  textarea::placeholder{color:rgba(138,129,153,0.6)}
+  a:hover{filter:brightness(1.2)}
+  @keyframes pulse{0%,100%{opacity:0.5}50%{opacity:1}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  #root{min-height:100vh}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script type="text/babel" data-type="module">
+const {useState,useEffect,useRef}=React;
+
+// ─── 78-card deck ───
+const DECK=[
+  {name:"Шут",img:"ar00",meaning:"Начало пути, спонтанность, вера в жизнь"},
+  {name:"Маг",img:"ar01",meaning:"Сила воли, мастерство, новые возможности"},
+  {name:"Верховная Жрица",img:"ar02",meaning:"Интуиция, тайное знание, внутренний голос"},
+  {name:"Императрица",img:"ar03",meaning:"Изобилие, творчество, женственность"},
+  {name:"Император",img:"ar04",meaning:"Структура, власть, стабильность"},
+  {name:"Иерофант",img:"ar05",meaning:"Традиции, наставничество, духовный поиск"},
+  {name:"Влюблённые",img:"ar06",meaning:"Выбор сердца, союз, гармония"},
+  {name:"Колесница",img:"ar07",meaning:"Победа, движение вперёд, сила духа"},
+  {name:"Сила",img:"ar08",meaning:"Мягкая сила, терпение, внутренняя стойкость"},
+  {name:"Отшельник",img:"ar09",meaning:"Уединение, мудрость, поиск истины"},
+  {name:"Колесо Фортуны",img:"ar10",meaning:"Перемены, цикличность, судьбоносный момент"},
+  {name:"Справедливость",img:"ar11",meaning:"Баланс, честность, кармический закон"},
+  {name:"Повешенный",img:"ar12",meaning:"Пауза, новый взгляд, жертва ради роста"},
+  {name:"Смерть",img:"ar13",meaning:"Трансформация, конец старого, обновление"},
+  {name:"Умеренность",img:"ar14",meaning:"Гармония, терпение, золотая середина"},
+  {name:"Дьявол",img:"ar15",meaning:"Привязанности, иллюзии, теневая сторона"},
+  {name:"Башня",img:"ar16",meaning:"Разрушение иллюзий, внезапные перемены, освобождение"},
+  {name:"Звезда",img:"ar17",meaning:"Надежда, вдохновение, исцеление"},
+  {name:"Луна",img:"ar18",meaning:"Страхи, подсознание, неясность пути"},
+  {name:"Солнце",img:"ar19",meaning:"Радость, успех, ясность"},
+  {name:"Суд",img:"ar20",meaning:"Пробуждение, переоценка, призвание"},
+  {name:"Мир",img:"ar21",meaning:"Завершение, целостность, достижение цели"},
+  {name:"Туз Кубков",img:"cu01",meaning:"Новое чувство, эмоциональное начало"},
+  {name:"2 Кубков",img:"cu02",meaning:"Партнёрство, взаимность, связь"},
+  {name:"3 Кубков",img:"cu03",meaning:"Праздник, дружба, радость"},
+  {name:"4 Кубков",img:"cu04",meaning:"Апатия, упущенные возможности, пресыщение"},
+  {name:"5 Кубков",img:"cu05",meaning:"Потеря, сожаление, но не всё потеряно"},
+  {name:"6 Кубков",img:"cu06",meaning:"Ностальгия, детство, добрые воспоминания"},
+  {name:"7 Кубков",img:"cu07",meaning:"Иллюзии, мечты, необходимость выбора"},
+  {name:"8 Кубков",img:"cu08",meaning:"Уход, поиск глубинного смысла"},
+  {name:"9 Кубков",img:"cu09",meaning:"Исполнение желаний, удовлетворение"},
+  {name:"10 Кубков",img:"cu10",meaning:"Семейное счастье, эмоциональная полнота"},
+  {name:"Паж Кубков",img:"cu11",meaning:"Творческая идея, послание сердца"},
+  {name:"Рыцарь Кубков",img:"cu12",meaning:"Романтик, предложение, следование за мечтой"},
+  {name:"Королева Кубков",img:"cu13",meaning:"Эмпатия, забота, эмоциональная зрелость"},
+  {name:"Король Кубков",img:"cu14",meaning:"Эмоциональная мудрость, спокойствие, сострадание"},
+  {name:"Туз Мечей",img:"sw01",meaning:"Ясность ума, прорыв, истина"},
+  {name:"2 Мечей",img:"sw02",meaning:"Выбор, внутренний конфликт, затишье"},
+  {name:"3 Мечей",img:"sw03",meaning:"Боль сердца, разочарование, исцеление"},
+  {name:"4 Мечей",img:"sw04",meaning:"Отдых, восстановление, медитация"},
+  {name:"5 Мечей",img:"sw05",meaning:"Конфликт, пиррова победа, пора отпустить"},
+  {name:"6 Мечей",img:"sw06",meaning:"Переход, оставление прошлого, путь к лучшему"},
+  {name:"7 Мечей",img:"sw07",meaning:"Хитрость, стратегия, скрытые мотивы"},
+  {name:"8 Мечей",img:"sw08",meaning:"Ограничения, ловушка ума, выход есть"},
+  {name:"9 Мечей",img:"sw09",meaning:"Тревога, страхи, бессонница — отпусти"},
+  {name:"10 Мечей",img:"sw10",meaning:"Конец цикла боли, дно пройдено, рассвет"},
+  {name:"Паж Мечей",img:"sw11",meaning:"Любопытство, новые идеи, бдительность"},
+  {name:"Рыцарь Мечей",img:"sw12",meaning:"Стремительность, решимость, но осторожнее"},
+  {name:"Королева Мечей",img:"sw13",meaning:"Острый ум, независимость, правда"},
+  {name:"Король Мечей",img:"sw14",meaning:"Авторитет разума, логика, справедливость"},
+  {name:"Туз Пентаклей",img:"pe01",meaning:"Новая возможность, материальное начало"},
+  {name:"2 Пентаклей",img:"pe02",meaning:"Баланс, жонглирование, адаптация"},
+  {name:"3 Пентаклей",img:"pe03",meaning:"Мастерство, командная работа, рост"},
+  {name:"4 Пентаклей",img:"pe04",meaning:"Стабильность, но не цепляйся слишком"},
+  {name:"5 Пентаклей",img:"pe05",meaning:"Трудности, но помощь рядом"},
+  {name:"6 Пентаклей",img:"pe06",meaning:"Щедрость, обмен, справедливость"},
+  {name:"7 Пентаклей",img:"pe07",meaning:"Терпение, оценка результатов, рост"},
+  {name:"8 Пентаклей",img:"pe08",meaning:"Усердие, обучение, совершенствование"},
+  {name:"9 Пентаклей",img:"pe09",meaning:"Самодостаточность, роскошь, плоды труда"},
+  {name:"10 Пентаклей",img:"pe10",meaning:"Наследие, семейное благополучие, достаток"},
+  {name:"Паж Пентаклей",img:"pe11",meaning:"Учёба, новый навык, практичность"},
+  {name:"Рыцарь Пентаклей",img:"pe12",meaning:"Надёжность, упорство, методичность"},
+  {name:"Королева Пентаклей",img:"pe13",meaning:"Заботливость, практичная мудрость, уют"},
+  {name:"Король Пентаклей",img:"pe14",meaning:"Успех, щедрость, надёжная опора"},
+  {name:"Туз Жезлов",img:"wa01",meaning:"Вдохновение, новый импульс, творческий огонь"},
+  {name:"2 Жезлов",img:"wa02",meaning:"Планирование, выбор пути, дерзай"},
+  {name:"3 Жезлов",img:"wa03",meaning:"Расширение, горизонты, рост"},
+  {name:"4 Жезлов",img:"wa04",meaning:"Праздник, стабильность, радость дома"},
+  {name:"5 Жезлов",img:"wa05",meaning:"Конкуренция, вызов, борьба"},
+  {name:"6 Жезлов",img:"wa06",meaning:"Победа, признание, триумф"},
+  {name:"7 Жезлов",img:"wa07",meaning:"Стойкость, защита позиций, не сдавайся"},
+  {name:"8 Жезлов",img:"wa08",meaning:"Быстрое движение, перемены, полёт"},
+  {name:"9 Жезлов",img:"wa09",meaning:"Стойкость, последний рубеж, выдержка"},
+  {name:"10 Жезлов",img:"wa10",meaning:"Бремя, перегрузка — делегируй или отпусти"},
+  {name:"Паж Жезлов",img:"wa11",meaning:"Энтузиазм, новости, искра идеи"},
+  {name:"Рыцарь Жезлов",img:"wa12",meaning:"Страсть, приключение, действие"},
+  {name:"Королева Жезлов",img:"wa13",meaning:"Уверенность, харизма, тёплая энергия"},
+  {name:"Король Жезлов",img:"wa14",meaning:"Лидерство, видение, смелость"},
+].map((c,i)=>({...c,id:i}));
+
+// ─── Image URLs ───
+const WIKI={
+  ar00:"9/90/RWS_Tarot_00_Fool.jpg",ar01:"d/de/RWS_Tarot_01_Magician.jpg",ar02:"8/88/RWS_Tarot_02_High_Priestess.jpg",ar03:"d/d2/RWS_Tarot_03_Empress.jpg",ar04:"c/c3/RWS_Tarot_04_Emperor.jpg",ar05:"8/8d/RWS_Tarot_05_Hierophant.jpg",ar06:"3/3a/TheLovers.jpg",ar07:"9/9b/RWS_Tarot_07_Chariot.jpg",ar08:"f/f5/RWS_Tarot_08_Strength.jpg",ar09:"4/4d/RWS_Tarot_09_Hermit.jpg",ar10:"3/3c/RWS_Tarot_10_Wheel_of_Fortune.jpg",ar11:"e/e0/RWS_Tarot_11_Justice.jpg",ar12:"2/2b/RWS_Tarot_12_Hanged_Man.jpg",ar13:"d/d7/RWS_Tarot_13_Death.jpg",ar14:"f/f8/RWS_Tarot_14_Temperance.jpg",ar15:"5/55/RWS_Tarot_15_Devil.jpg",ar16:"5/53/RWS_Tarot_16_Tower.jpg",ar17:"d/db/RWS_Tarot_17_Star.jpg",ar18:"7/7f/RWS_Tarot_18_Moon.jpg",ar19:"1/17/RWS_Tarot_19_Sun.jpg",ar20:"d/dd/RWS_Tarot_20_Judgement.jpg",ar21:"f/ff/RWS_Tarot_21_World.jpg",
+  cu01:"3/36/Cups01.jpg",cu02:"f/f8/Cups02.jpg",cu03:"7/7a/Cups03.jpg",cu04:"3/35/Cups04.jpg",cu05:"d/d7/Cups05.jpg",cu06:"1/17/Cups06.jpg",cu07:"a/ae/Cups07.jpg",cu08:"6/60/Cups08.jpg",cu09:"2/24/Cups09.jpg",cu10:"8/84/Cups10.jpg",cu11:"a/ad/Cups11.jpg",cu12:"f/fa/Cups12.jpg",cu13:"6/62/Cups13.jpg",cu14:"0/04/Cups14.jpg",
+  sw01:"1/1a/Swords01.jpg",sw02:"9/9e/Swords02.jpg",sw03:"0/02/Swords03.jpg",sw04:"b/bf/Swords04.jpg",sw05:"2/23/Swords05.jpg",sw06:"2/29/Swords06.jpg",sw07:"3/34/Swords07.jpg",sw08:"a/a7/Swords08.jpg",sw09:"2/2f/Swords09.jpg",sw10:"d/d4/Swords10.jpg",sw11:"4/4c/Swords11.jpg",sw12:"b/b0/Swords12.jpg",sw13:"d/d4/Swords13.jpg",sw14:"3/33/Swords14.jpg",
+  pe01:"f/fd/Pents01.jpg",pe02:"9/9f/Pents02.jpg",pe03:"4/42/Pents03.jpg",pe04:"3/35/Pents04.jpg",pe05:"9/96/Pents05.jpg",pe06:"a/a6/Pents06.jpg",pe07:"6/6a/Pents07.jpg",pe08:"4/49/Pents08.jpg",pe09:"f/f0/Pents09.jpg",pe10:"4/42/Pents10.jpg",pe11:"e/ec/Pents11.jpg",pe12:"d/d5/Pents12.jpg",pe13:"8/88/Pents13.jpg",pe14:"8/85/Pents14.jpg",
+  wa01:"1/11/Wands01.jpg",wa02:"0/0f/Wands02.jpg",wa03:"f/ff/Wands03.jpg",wa04:"a/a4/Wands04.jpg",wa05:"9/9d/Wands05.jpg",wa06:"3/3b/Wands06.jpg",wa07:"e/e4/Wands07.jpg",wa08:"6/6b/Wands08.jpg",wa09:"e/e7/Wands09.jpg",wa10:"0/0b/Wands10.jpg",wa11:"6/6a/Wands11.jpg",wa12:"1/16/Wands12.jpg",wa13:"0/0d/Wands13.jpg",wa14:"c/ce/Wands14.jpg",
+};
+const SACRED={
+  ar00:"ar00",ar01:"ar01",ar02:"ar02",ar03:"ar03",ar04:"ar04",ar05:"ar05",ar06:"ar06",ar07:"ar07",ar08:"ar08",ar09:"ar09",ar10:"ar10",ar11:"ar11",ar12:"ar12",ar13:"ar13",ar14:"ar14",ar15:"ar15",ar16:"ar16",ar17:"ar17",ar18:"ar18",ar19:"ar19",ar20:"ar20",ar21:"ar21",
+  cu01:"cuac",cu02:"cu02",cu03:"cu03",cu04:"cu04",cu05:"cu05",cu06:"cu06",cu07:"cu07",cu08:"cu08",cu09:"cu09",cu10:"cu10",cu11:"cupa",cu12:"cukn",cu13:"cuqu",cu14:"cuki",
+  sw01:"swac",sw02:"sw02",sw03:"sw03",sw04:"sw04",sw05:"sw05",sw06:"sw06",sw07:"sw07",sw08:"sw08",sw09:"sw09",sw10:"sw10",sw11:"swpa",sw12:"swkn",sw13:"swqu",sw14:"swki",
+  pe01:"peac",pe02:"pe02",pe03:"pe03",pe04:"pe04",pe05:"pe05",pe06:"pe06",pe07:"pe07",pe08:"pe08",pe09:"pe09",pe10:"pe10",pe11:"pepa",pe12:"pekn",pe13:"pequ",pe14:"peki",
+  wa01:"waac",wa02:"wa02",wa03:"wa03",wa04:"wa04",wa05:"wa05",wa06:"wa06",wa07:"wa07",wa08:"wa08",wa09:"wa09",wa10:"wa10",wa11:"wapa",wa12:"wakn",wa13:"waqu",wa14:"waki",
+};
+function getImgUrls(card){
+  const w=WIKI[card.img],s=SACRED[card.img];
+  return[w?`https://upload.wikimedia.org/wikipedia/commons/${w}`:null,s?`https://www.sacred-texts.com/tarot/pkt/img/${s}.jpg`:null].filter(Boolean);
+}
+function shuffle(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+// ─── Stars ───
+function StarsCanvas(){
+  const ref=useRef(null);
+  useEffect(()=>{const c=ref.current;if(!c)return;const ctx=c.getContext("2d");let id,stars=[];
+    const resize=()=>{c.width=c.offsetWidth*2;c.height=c.offsetHeight*2;stars=Array.from({length:120},()=>({x:Math.random()*c.width,y:Math.random()*c.height,r:Math.random()*2+0.5,sp:Math.random()*0.3+0.05,ph:Math.random()*Math.PI*2}));};
+    resize();window.addEventListener("resize",resize);
+    const draw=t=>{ctx.clearRect(0,0,c.width,c.height);for(const s of stars){const a=0.4+0.6*Math.sin(t*0.001*s.sp+s.ph);ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fillStyle=`rgba(215,195,150,${a})`;ctx.fill();}id=requestAnimationFrame(draw);};
+    id=requestAnimationFrame(draw);return()=>{cancelAnimationFrame(id);window.removeEventListener("resize",resize);};
+  },[]);
+  return React.createElement("canvas",{ref,style:{position:"fixed",inset:0,width:"100%",height:"100%",zIndex:0,pointerEvents:"none"}});
+}
+
+function MoonDecor({style,size=60}){
+  return <svg width={size} height={size} viewBox="0 0 60 60" style={{...style,opacity:0.18}}><path d="M30 5 C18 5 8 16 8 30 C8 44 18 55 30 55 C22 50 18 40 18 30 C18 20 22 10 30 5Z" fill="#d4af37"/></svg>;
+}
+
+function CardBack(){
+  return(<div style={{width:"100%",height:"100%",background:"linear-gradient(135deg,#0d1230,#1a1f4e,#0d1230)",borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #d4af3744",position:"relative",overflow:"hidden"}}>
+    <svg width="100%" height="100%" viewBox="0 0 160 240" style={{position:"absolute",inset:0}}>
+      <defs><radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop offset="0%" stopColor="#d4af37" stopOpacity="0.15"/><stop offset="100%" stopColor="#d4af37" stopOpacity="0"/></radialGradient></defs>
+      <circle cx="80" cy="120" r="70" fill="url(#glow)"/>
+      {Array.from({length:12}).map((_,i)=>{const a=i*30*Math.PI/180;return <line key={i} x1={80+Math.cos(a)*25} y1={120+Math.sin(a)*25} x2={80+Math.cos(a)*65} y2={120+Math.sin(a)*65} stroke="#d4af37" strokeWidth="0.8" strokeDasharray="2 4" opacity="0.35"/>;})}
+      <path d="M80 90 C72 90 66 100 66 112 C66 124 72 134 80 134 C74 130 70 122 70 112 C70 102 74 94 80 90Z" fill="#d4af37" opacity="0.4"/>
+      {[[40,50],[120,50],[40,190],[120,190],[30,120],[130,120]].map(([x,y],i)=><circle key={i} cx={x} cy={y} r="1.5" fill="#d4af37" opacity="0.5"/>)}
+      <rect x="6" y="6" width="148" height="228" rx="6" fill="none" stroke="#d4af37" strokeWidth="0.6" opacity="0.25"/>
+    </svg>
+    <span style={{fontFamily:"'Cormorant Garamond',serif",fontSize:22,color:"#d4af37",opacity:0.5,zIndex:1}}>✦</span>
+  </div>);
+}
+
+function CardImage({card}){
+  const urls=getImgUrls(card);
+  const[srcIdx,setSrcIdx]=useState(0);
+  const[loaded,setLoaded]=useState(false);
+  const[failed,setFailed]=useState(false);
+  const handleError=()=>{if(srcIdx<urls.length-1)setSrcIdx(srcIdx+1);else setFailed(true);};
+  const currentUrl=urls[srcIdx]||null;
+  return(<>
+    {currentUrl&&!failed&&<img src={currentUrl} alt={card.name} onLoad={()=>setLoaded(true)} onError={handleError} style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:8,display:loaded?"block":"none"}}/>}
+    {(!loaded||failed)&&<div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"#f5f0e1",color:"#1a1f4e",fontFamily:"'Cormorant Garamond',serif",fontSize:15,textAlign:"center",padding:12,lineHeight:1.4}}>{card.name}</div>}
+  </>);
+}
+
+function TarotCard({card,flipped,onClick,label,delay=0,autoFlip=false}){
+  const[appeared,setAppeared]=useState(false);
+  const[isFlipped,setIsFlipped]=useState(false);
+  useEffect(()=>{const t=setTimeout(()=>setAppeared(true),delay);return()=>clearTimeout(t);},[delay]);
+  useEffect(()=>{if(autoFlip&&appeared){const t=setTimeout(()=>{setIsFlipped(true);if(onClick)onClick();},800);return()=>clearTimeout(t);}},[autoFlip,appeared]);
+  useEffect(()=>{if(flipped)setIsFlipped(true);},[flipped]);
+  return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,opacity:appeared?1:0,transform:appeared?"translateY(0)":"translateY(30px)",transition:"opacity 0.6s ease,transform 0.6s ease"}}>
+      {label&&<div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:13,color:"#d4af37",letterSpacing:2,textTransform:"uppercase",marginBottom:4,textAlign:"center"}}>{label}</div>}
+      <div onClick={!isFlipped&&!autoFlip?onClick:undefined} style={{width:140,height:220,perspective:800,cursor:isFlipped||autoFlip?"default":"pointer"}}>
+        <div style={{width:"100%",height:"100%",position:"relative",transformStyle:"preserve-3d",transition:"transform 0.8s cubic-bezier(0.4,0,0.2,1)",transform:isFlipped?"rotateY(180deg)":"rotateY(0deg)"}}>
+          <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",borderRadius:10,overflow:"hidden",boxShadow:isFlipped?"none":"0 0 25px rgba(212,175,55,0.15),0 8px 32px rgba(0,0,0,0.5)"}}><CardBack/></div>
+          <div style={{position:"absolute",inset:0,backfaceVisibility:"hidden",transform:"rotateY(180deg)",borderRadius:10,overflow:"hidden",background:"#f5f0e1",boxShadow:"0 0 30px rgba(212,175,55,0.2),0 8px 32px rgba(0,0,0,0.5)"}}><CardImage card={card}/></div>
+        </div>
+      </div>
+      <div style={{fontFamily:"'Cormorant Garamond',serif",fontSize:15,fontWeight:600,color:"#e8dcc8",textAlign:"center",minHeight:40,opacity:isFlipped?1:0,transform:isFlipped?"translateY(0)":"translateY(-10px)",transition:"opacity 0.5s ease 0.4s,transform 0.5s ease 0.4s",maxWidth:140,lineHeight:1.3}}>{isFlipped?card.name:""}</div>
+    </div>
+  );
+}
+
+const SPREADS=[
+  {id:"day",name:"Карта дня",icon:"☽",count:1,labels:[null],hasQuestion:false,autoFlip:true,description:"Послание на сегодня"},
+  {id:"question",name:"Задай вопрос",icon:"✦",count:1,labels:[null],hasQuestion:true,autoFlip:true,description:"Одна карта — ответ на вопрос"},
+  {id:"three",name:"Три карты",icon:"☾ ◯ ☽",count:3,labels:["Прошлое","Настоящее","Будущее"],hasQuestion:true,autoFlip:false,description:"Прошлое · Настоящее · Будущее"},
+];
+
+// Journal — localStorage for standalone version
+const JK="tarot-journal";
+function loadJ(){try{return JSON.parse(localStorage.getItem(JK))||[];}catch{return[];}}
+function saveJ(e){try{localStorage.setItem(JK,JSON.stringify(e));}catch(er){console.error(er);}}
+function fmtDate(iso){const d=new Date(iso);const day=String(d.getDate()).padStart(2,"0");const m=["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"][d.getMonth()];const h=String(d.getHours()).padStart(2,"0");const mn=String(d.getMinutes()).padStart(2,"0");return`${day} ${m}, ${h}:${mn}`;}
+
+function App(){
+  const[screen,setScreen]=useState("welcome");
+  const[spread,setSpread]=useState(null);
+  const[question,setQuestion]=useState("");
+  const[drawnCards,setDrawnCards]=useState([]);
+  const[flippedCards,setFlippedCards]=useState(new Set());
+  const[showResult,setShowResult]=useState(false);
+  const[fadeIn,setFadeIn]=useState(false);
+  const[journal,setJournal]=useState(loadJ());
+  const autoSavedRef=useRef(false);
+
+  useEffect(()=>{setFadeIn(true);},[]);
+  useEffect(()=>{if(screen){setFadeIn(false);const t=setTimeout(()=>setFadeIn(true),50);return()=>clearTimeout(t);}},[screen]);
+
+  const selectSpread=s=>{setSpread(s);setQuestion("");setDrawnCards([]);setFlippedCards(new Set());setShowResult(false);autoSavedRef.current=false;setScreen("reading");};
+  const startReading=()=>{const sh=shuffle(DECK);setDrawnCards(sh.slice(0,spread.count));setFlippedCards(new Set());setShowResult(false);autoSavedRef.current=false;};
+  const flipCard=idx=>{if(flippedCards.has(idx))return;const next=new Set(flippedCards);next.add(idx);setFlippedCards(next);if(next.size===spread.count)setTimeout(()=>setShowResult(true),1200);};
+
+  useEffect(()=>{if(spread?.autoFlip&&drawnCards.length>0&&!showResult){const t=setTimeout(()=>setShowResult(true),2200);return()=>clearTimeout(t);}},[spread,drawnCards,showResult]);
+
+  useEffect(()=>{
+    if(showResult&&!autoSavedRef.current&&drawnCards.length>0){
+      autoSavedRef.current=true;
+      const entry={id:Date.now(),date:new Date().toISOString(),spreadName:spread.name,question:question||null,cards:drawnCards.map(c=>({name:c.name,meaning:c.meaning}))};
+      const u=[entry,...journal];setJournal(u);saveJ(u);
+    }
+  },[showResult]);
+
+  const delEntry=id=>{const u=journal.filter(e=>e.id!==id);setJournal(u);saveJ(u);};
+  const resetAll=()=>{setScreen("spread");setSpread(null);setDrawnCards([]);setFlippedCards(new Set());setShowResult(false);setQuestion("");autoSavedRef.current=false;};
+
+  const btn={fontFamily:"'Cormorant Garamond',serif",fontSize:16,fontWeight:600,padding:"12px 32px",background:"transparent",border:"1px solid #d4af37",color:"#d4af37",borderRadius:30,cursor:"pointer",letterSpacing:1.5,transition:"all 0.3s ease"};
+  const bh=(e,on)=>{e.target.style.background=on?"rgba(212,175,55,0.12)":"transparent";e.target.style.boxShadow=on?"0 0 20px rgba(212,175,55,0.15)":"none";};
+  const panel={background:"rgba(20,24,68,0.5)",border:"1px solid rgba(212,175,55,0.15)",borderRadius:16,backdropFilter:"blur(10px)"};
+  const fade={opacity:fadeIn?1:0,transform:fadeIn?"translateY(0)":"translateY(20px)",transition:"opacity 0.8s ease,transform 0.8s ease"};
+
+  return(
+    <div style={{minHeight:"100vh",background:"radial-gradient(ellipse at 50% 30%,#141844 0%,#0a0e2a 50%,#060818 100%)",display:"flex",flexDirection:"column",alignItems:"center",padding:"30px 16px 60px",position:"relative",overflow:"hidden",fontFamily:"'Cormorant Garamond',serif"}}>
+      <StarsCanvas/>
+      <MoonDecor style={{position:"fixed",top:20,left:20}} size={50}/>
+      <MoonDecor style={{position:"fixed",top:20,right:20,transform:"scaleX(-1)"}} size={50}/>
+      <MoonDecor style={{position:"fixed",bottom:20,left:20,transform:"scaleY(-1)"}} size={40}/>
+      <MoonDecor style={{position:"fixed",bottom:20,right:20,transform:"scale(-1)"}} size={40}/>
+
+      {screen==="welcome"&&(
+        <div style={{...fade,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,minHeight:"80vh",textAlign:"center",gap:20,zIndex:1}}>
+          <div style={{width:180,height:180,borderRadius:"50%",background:"radial-gradient(circle,rgba(180,155,100,0.12) 0%,transparent 70%)",border:"1px solid rgba(212,175,55,0.15)",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:10}}><span style={{fontSize:60,opacity:0.7}}>☽</span></div>
+          <h1 style={{fontSize:36,fontWeight:300,color:"#e8dcc8",letterSpacing:4,margin:0}}>Расклад от Даши</h1>
+          <p style={{fontSize:16,color:"#8a8199",fontStyle:"italic",margin:"0 0 20px",maxWidth:300,lineHeight:1.6}}>Расклад и послание карт</p>
+          <button onClick={()=>setScreen("spread")} style={btn} onMouseEnter={e=>bh(e,true)} onMouseLeave={e=>bh(e,false)}>Начать расклад</button>
+        </div>
+      )}
+
+      {screen==="spread"&&(
+        <div style={{...fade,display:"flex",flexDirection:"column",alignItems:"center",flex:1,minHeight:"80vh",justifyContent:"center",gap:30,zIndex:1}}>
+          <h2 style={{fontSize:26,fontWeight:300,color:"#e8dcc8",letterSpacing:3,margin:0}}>Выбери расклад</h2>
+          <div style={{display:"flex",gap:16,flexWrap:"wrap",justifyContent:"center"}}>
+            {SPREADS.map(s=>(
+              <div key={s.id} onClick={()=>selectSpread(s)} style={{width:180,padding:"28px 16px",...panel,cursor:"pointer",textAlign:"center",transition:"all 0.3s ease"}}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(212,175,55,0.5)";e.currentTarget.style.boxShadow="0 0 30px rgba(212,175,55,0.1)";e.currentTarget.style.transform="translateY(-4px)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(212,175,55,0.15)";e.currentTarget.style.boxShadow="none";e.currentTarget.style.transform="translateY(0)";}}>
+                <div style={{fontSize:24,marginBottom:12,letterSpacing:6}}>{s.icon}</div>
+                <div style={{fontSize:18,fontWeight:600,color:"#e8dcc8",marginBottom:8}}>{s.name}</div>
+                <div style={{fontSize:13,color:"#8a8199",fontStyle:"italic"}}>{s.description}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={()=>setScreen("journal")} style={{...btn,fontSize:14,padding:"10px 24px",opacity:0.6,marginTop:8}}
+            onMouseEnter={e=>{e.target.style.opacity="1";bh(e,true);}} onMouseLeave={e=>{e.target.style.opacity="0.6";bh(e,false);}}>✦ Мой журнал</button>
+        </div>
+      )}
+
+      {screen==="reading"&&(
+        <div style={{...fade,display:"flex",flexDirection:"column",alignItems:"center",flex:1,width:"100%",maxWidth:700,zIndex:1,gap:24,paddingTop:20}}>
+          <h2 style={{fontSize:24,fontWeight:300,color:"#e8dcc8",letterSpacing:3,margin:0}}>{spread.name}</h2>
+          {drawnCards.length===0&&(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:16,width:"100%",maxWidth:400}}>
+              <p style={{fontSize:15,color:"#8a8199",fontStyle:"italic",textAlign:"center",margin:0,lineHeight:1.6}}>
+                {spread.hasQuestion?`Сосредоточься на своём вопросе, вдохни и нажми «Вытянуть ${spread.count===1?"карту":"карты"}»`:"Сделай вдох, очисти мысли и вытяни свою карту дня"}
+              </p>
+              {spread.hasQuestion&&<textarea value={question} onChange={e=>setQuestion(e.target.value)} placeholder="Твой вопрос картам..."
+                style={{width:"100%",minHeight:80,background:"rgba(20,24,68,0.4)",border:"1px solid rgba(212,175,55,0.2)",borderRadius:12,color:"#e8dcc8",fontFamily:"'Cormorant Garamond',serif",fontSize:16,padding:16,resize:"vertical",outline:"none",lineHeight:1.5}}
+                onFocus={e=>e.target.style.borderColor="rgba(212,175,55,0.4)"} onBlur={e=>e.target.style.borderColor="rgba(212,175,55,0.2)"}/>}
+              <button onClick={startReading} style={btn} onMouseEnter={e=>bh(e,true)} onMouseLeave={e=>bh(e,false)}>✦ Вытянуть {spread.count===1?"карту":"карты"} ✦</button>
+              <button onClick={()=>setScreen("spread")} style={{...btn,fontSize:13,padding:"8px 20px",opacity:0.5,marginTop:4}} onMouseEnter={e=>e.target.style.opacity="0.8"} onMouseLeave={e=>e.target.style.opacity="0.5"}>← Назад</button>
+            </div>
+          )}
+          {drawnCards.length>0&&(<>
+            <div style={{position:"relative",display:"flex",justifyContent:"center",alignItems:"center",padding:"40px 20px",width:"100%"}}>
+              <div style={{position:"absolute",width:spread.count===1?220:480,height:spread.count===1?220:300,borderRadius:"50%",background:"radial-gradient(circle,rgba(180,155,100,0.08) 0%,transparent 70%)",border:"1px solid rgba(212,175,55,0.08)",pointerEvents:"none"}}/>
+              <svg style={{position:"absolute",width:spread.count===1?300:560,height:spread.count===1?300:400,pointerEvents:"none",opacity:0.15}} viewBox="0 0 560 400">
+                {Array.from({length:16}).map((_,i)=>{const a=i*22.5*Math.PI/180,cx=280,cy=200;return <line key={i} x1={cx+Math.cos(a)*60} y1={cy+Math.sin(a)*60} x2={cx+Math.cos(a)*200} y2={cy+Math.sin(a)*200} stroke="#d4af37" strokeWidth="1" strokeDasharray="3 6"/>;})}
+              </svg>
+              <div style={{display:"flex",gap:spread.count===1?0:28,justifyContent:"center",alignItems:"flex-start",position:"relative",zIndex:2,flexWrap:"wrap"}}>
+                {drawnCards.map((card,idx)=><TarotCard key={card.id} card={card} flipped={flippedCards.has(idx)} onClick={()=>flipCard(idx)} label={spread.labels[idx]} delay={idx*300} autoFlip={spread.autoFlip}/>)}
+              </div>
+            </div>
+            {!showResult&&!spread.autoFlip&&flippedCards.size<spread.count&&<p style={{fontSize:14,color:"#8a8199",fontStyle:"italic",animation:"pulse 2s ease-in-out infinite"}}>Нажми на карту, чтобы перевернуть</p>}
+            {showResult&&(
+              <div style={{width:"100%",maxWidth:440,padding:28,...panel,textAlign:"center"}}>
+                {question&&<p style={{fontSize:14,color:"#8a8199",fontStyle:"italic",marginTop:0,marginBottom:16}}>«{question}»</p>}
+                <div style={{marginBottom:20}}>
+                  {drawnCards.map((card,i)=>(
+                    <div key={card.id} style={{marginBottom:i<drawnCards.length-1?14:0}}>
+                      {spread.labels[i]&&<div style={{fontSize:11,color:"#d4af37",letterSpacing:2,textTransform:"uppercase",marginBottom:4}}>{spread.labels[i]}</div>}
+                      <div style={{fontSize:16,fontWeight:600,color:"#e8dcc8",marginBottom:4}}>{card.name}</div>
+                      <div style={{fontSize:14,color:"#8a8199",fontStyle:"italic",lineHeight:1.5}}>{card.meaning}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{width:40,height:1,background:"linear-gradient(90deg,transparent,#d4af37,transparent)",margin:"0 auto 20px"}}/>
+                <p style={{fontSize:16,color:"#e8dcc8",lineHeight:1.7,margin:"0 0 20px"}}>
+                  За персональной трактовкой расклада пиши{" "}
+                  <a href="https://t.me/neva_nevajno" target="_blank" rel="noopener noreferrer" style={{color:"#d4af37",textDecoration:"none",borderBottom:"1px solid rgba(212,175,55,0.4)"}}>@neva_nevajno</a>
+                </p>
+                <a href="https://t.me/rasklad_takoj" target="_blank" rel="noopener noreferrer" style={{display:"inline-block",padding:"10px 24px",background:"rgba(212,175,55,0.1)",border:"1px solid rgba(212,175,55,0.3)",borderRadius:30,color:"#d4af37",textDecoration:"none",fontSize:14,letterSpacing:1}}>✦ Канал: Расклад Такой ✦</a>
+                <p style={{fontSize:12,color:"#8a8199",marginTop:16,opacity:0.6}}>✓ Сохранено в журнал</p>
+                <div style={{marginTop:16}}><button onClick={resetAll} style={{...btn,fontSize:14,padding:"10px 24px",opacity:0.7}} onMouseEnter={e=>{e.target.style.opacity="1";bh(e,true);}} onMouseLeave={e=>{e.target.style.opacity="0.7";bh(e,false);}}>Новый расклад</button></div>
+              </div>
+            )}
+          </>)}
+        </div>
+      )}
+
+      {screen==="journal"&&(
+        <div style={{...fade,display:"flex",flexDirection:"column",alignItems:"center",flex:1,width:"100%",maxWidth:500,zIndex:1,gap:20,paddingTop:20}}>
+          <h2 style={{fontSize:26,fontWeight:300,color:"#e8dcc8",letterSpacing:3,margin:0}}>Мой журнал</h2>
+          <p style={{fontSize:14,color:"#8a8199",fontStyle:"italic",margin:0}}>История раскладов</p>
+          {journal.length===0?<div style={{...panel,padding:"40px 28px",textAlign:"center",width:"100%",marginTop:20}}><p style={{fontSize:16,color:"#8a8199",margin:0}}>Пока пусто. Сделай свой первый расклад!</p></div>:(
+            <div style={{width:"100%",display:"flex",flexDirection:"column",gap:12,marginTop:8}}>
+              {journal.map(entry=>(
+                <div key={entry.id} style={{...panel,padding:"20px 22px"}}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10}}>
+                    <div><div style={{fontSize:12,color:"#8a8199",marginBottom:4}}>{fmtDate(entry.date)}</div><div style={{fontSize:16,fontWeight:600,color:"#d4af37"}}>{entry.spreadName}</div></div>
+                    <button onClick={()=>delEntry(entry.id)} style={{background:"none",border:"none",color:"#8a8199",cursor:"pointer",fontSize:16,padding:"2px 6px",opacity:0.4,transition:"opacity 0.2s"}} onMouseEnter={e=>e.target.style.opacity="1"} onMouseLeave={e=>e.target.style.opacity="0.4"}>✕</button>
+                  </div>
+                  {entry.question&&<p style={{fontSize:13,color:"#8a8199",fontStyle:"italic",margin:"0 0 8px"}}>«{entry.question}»</p>}
+                  <div style={{display:"flex",flexDirection:"column",gap:6}}>
+                    {entry.cards.map((c,i)=><div key={i} style={{fontSize:13,color:"#e8dcc8",padding:"6px 12px",background:"rgba(212,175,55,0.06)",border:"1px solid rgba(212,175,55,0.12)",borderRadius:10}}><span style={{fontWeight:600}}>{c.name}</span>{c.meaning&&<span style={{color:"#8a8199"}}> — {c.meaning}</span>}</div>)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <button onClick={()=>setScreen("spread")} style={{...btn,fontSize:14,padding:"10px 24px",opacity:0.6,marginTop:12}} onMouseEnter={e=>{e.target.style.opacity="1";bh(e,true);}} onMouseLeave={e=>{e.target.style.opacity="0.6";bh(e,false);}}>← Назад к раскладам</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
